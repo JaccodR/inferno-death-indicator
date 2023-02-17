@@ -1,7 +1,6 @@
 package com.deathindicator;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -9,7 +8,6 @@ import net.runelite.api.events.*;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.callback.Hooks;
-import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -191,7 +189,7 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 			case NpcID.JALMEJJAK:
 				tzHaarNPC = new TzHaarNPC(npc, index, 75);
 				break;
-			// All fight caves monsters (npcid. didnt work for these for some reason :))) )
+			// All fight caves monsters (npcid. didn't work for these for some reason :))) )
 			case 2189: //bats
 			case 2190:
 			case 3116:
@@ -340,10 +338,7 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 		if (client.getMapRegions() == null)
 			return false;
 
-		if (ArrayUtils.contains(client.getMapRegions(), INFERNO_REGION_ID) || ArrayUtils.contains(client.getMapRegions(), FIGHTCAVES_REGION_ID))
-			return true;
-
-		return false;
+		return ArrayUtils.contains(client.getMapRegions(), INFERNO_REGION_ID) || ArrayUtils.contains(client.getMapRegions(), FIGHTCAVES_REGION_ID);
 	}
 
 	@VisibleForTesting
