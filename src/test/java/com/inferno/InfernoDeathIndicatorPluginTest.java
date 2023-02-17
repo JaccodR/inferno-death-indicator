@@ -1,13 +1,13 @@
-package com.example;
+package com.inferno;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class ExamplePluginTest
+public class InfernoDeathIndicatorPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(ExamplePlugin.class);
+		ExternalPluginManager.loadBuiltin(InfernoDeathIndicatorPlugin.class);
 		RuneLite.main(args);
 	}
 }
