@@ -1,4 +1,4 @@
-package com.inferno;
+package com.deathindicator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
@@ -19,25 +19,22 @@ import java.util.*;
 
 @Slf4j
 @PluginDescriptor(
-	name = "[S]Inferno Death Indicator"
+	name = "TzHaar Death Indicator"
 )
-public class InfernoDeathIndicatorPlugin extends Plugin
+public class TzHaarDeathIndicatorPlugin extends Plugin
 {
 	@Inject
 	private Client client;
-
-	@Inject
-	private InfernoDeathIndicatorConfig config;
 
 	@Inject
 	private ClientThread clientThread;
 	@Inject
 	private Hooks hooks;
 
-	private boolean isInInferno = false;
+	private boolean isInTzHaar = false;
 
-	private final ArrayList<InfernoNPC> infernoNPCs = new ArrayList<>();
-	private final ArrayList<InfernoNPC> deadInfernoNPCs = new ArrayList<>();
+	private final ArrayList<TzHaarNPC> tzHaarNPCS = new ArrayList<>();
+	private final ArrayList<TzHaarNPC> deadTzHaarNPCS = new ArrayList<>();
 	private final Map<Skill, Integer> previousXpMap = new EnumMap<Skill, Integer>(Skill.class);
 
 	private static final Set<Integer> CHINCHOMPAS = new HashSet<>(Arrays.asList(
@@ -50,6 +47,7 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 
 	private static final int BARRAGE_ANIMATION = 1979;
 	private static final int INFERNO_REGION_ID = 9043;
+	private static final int FIGHTCAVES_REGION_ID = 9551;
 	private final Hooks.RenderableDrawListener drawListener = this::shouldDraw;
 
 	@Override
@@ -83,29 +81,29 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick gameTick)
 	{
-		if (!isInInferno)
+		if (!isInTzHaar)
 		{
-			isInInferno = isInInferno();
+			isInTzHaar = isInTzHaar();
 		}
 		else
 		{
-			isInInferno = isInInferno();
-			if (!isInInferno)
+			isInTzHaar = isInTzHaar();
+			if (!isInTzHaar)
 			{
-				this.infernoNPCs.clear();
-				this.deadInfernoNPCs.clear();
+				this.tzHaarNPCS.clear();
+				this.deadTzHaarNPCS.clear();
 			}
 
-			Iterator<InfernoNPC> infernoNPCIterator = deadInfernoNPCs.iterator();
+			Iterator<TzHaarNPC> infernoNPCIterator = deadTzHaarNPCS.iterator();
 			while (infernoNPCIterator.hasNext())
 			{
-				InfernoNPC inpc = infernoNPCIterator.next();
-				inpc.setHidden(inpc.getHidden() + 1);
+				TzHaarNPC tzHaarNPC = infernoNPCIterator.next();
+				tzHaarNPC.setHidden(tzHaarNPC.getHidden() + 1);
 
-				final boolean isDead = inpc.getNpc().getHealthRatio() == 0;
-				if (inpc.getHidden() > 5 && !isDead)
+				final boolean isDead = tzHaarNPC.getNpc().getHealthRatio() == 0;
+				if (tzHaarNPC.getHidden() > 5 && !isDead)
 				{
-					inpc.setHidden(0);
+					tzHaarNPC.setHidden(0);
 					infernoNPCIterator.remove();
 				}
 			}
@@ -115,17 +113,17 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 	@Subscribe
 	public void onBeforeRender(BeforeRender beforeRender)
 	{
-		if (!isInInferno)
+		if (!isInTzHaar)
 			return;
 
-		for (InfernoNPC infernoNPC: deadInfernoNPCs)
-			infernoNPC.getNpc().setDead(true);
+		for (TzHaarNPC tzHaarNPC : deadTzHaarNPCS)
+			tzHaarNPC.getNpc().setDead(true);
 	}
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied hitsplatApplied)
 	{
-		if (!isInInferno)
+		if (!isInTzHaar)
 			return;
 
 		Actor actor = hitsplatApplied.getActor();
@@ -134,17 +132,17 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 			final int npcIndex = ((NPC) actor).getIndex();
 			final int damage = hitsplatApplied.getHitsplat().getAmount();
 
-			for (InfernoNPC infernoNPC : this.infernoNPCs)
+			for (TzHaarNPC tzHaarNPC : this.tzHaarNPCS)
 			{
-				if (infernoNPC.getNpcIndex() != npcIndex)
+				if (tzHaarNPC.getNpcIndex() != npcIndex)
 					continue;
 
 				if (hitsplatApplied.getHitsplat().getHitsplatType() == HitsplatID.HEAL)
-					infernoNPC.setHp(infernoNPC.getHp() + damage);
+					tzHaarNPC.setHp(tzHaarNPC.getHp() + damage);
 				else
-					infernoNPC.setHp(infernoNPC.getHp() - damage);
+					tzHaarNPC.setHp(tzHaarNPC.getHp() - damage);
 
-				infernoNPC.setQueuedDamage(Math.max(0, infernoNPC.getQueuedDamage() - damage));
+				tzHaarNPC.setQueuedDamage(Math.max(0, tzHaarNPC.getQueuedDamage() - damage));
 			}
 		}
 	}
@@ -152,49 +150,92 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 	@Subscribe
 	public void onNpcSpawned(NpcSpawned npcSpawned)
 	{
-		if (!isInInferno)
+		if (!isInTzHaar)
 			return;
 
-		InfernoNPC infernoNPC = null;
+		TzHaarNPC tzHaarNPC = null;
 		NPC npc = npcSpawned.getNpc();
 		int index = npc.getIndex();
-		switch(npcSpawned.getNpc().getId())
+		switch(npc.getId())
 		{
+			// All inferno monsters
 			case NpcID.JALNIB:
-				infernoNPC = new InfernoNPC(npc, index, 10);
+				tzHaarNPC = new TzHaarNPC(npc, index, 10);
 				break;
 			case NpcID.JALMEJRAH:
-				infernoNPC = new InfernoNPC(npc, index, 25);
+				tzHaarNPC = new TzHaarNPC(npc, index, 25);
 				break;
 			case NpcID.JALAK:
-				infernoNPC = new InfernoNPC(npc, index, 40);
+				tzHaarNPC = new TzHaarNPC(npc, index, 40);
 				break;
 			case NpcID.JALAKREKXIL:
 			case NpcID.JALAKREKMEJ:
 			case NpcID.JALAKREKKET:
-				infernoNPC = new InfernoNPC(npc, index, 15);
+				tzHaarNPC = new TzHaarNPC(npc, index, 15);
 				break;
 			case NpcID.JALIMKOT:
-				infernoNPC = new InfernoNPC(npc, index, 75);
+				tzHaarNPC = new TzHaarNPC(npc, index, 75);
 				break;
 			case NpcID.JALXIL:
-				infernoNPC = new InfernoNPC(npc, index, 125);
+				tzHaarNPC = new TzHaarNPC(npc, index, 125);
 				break;
 			case NpcID.JALZEK:
-				infernoNPC = new InfernoNPC(npc, index, 220);
+				tzHaarNPC = new TzHaarNPC(npc, index, 220);
 				break;
 			case NpcID.JALTOKJAD:
-				infernoNPC = new InfernoNPC(npc, index, 350);
+				tzHaarNPC = new TzHaarNPC(npc, index, 350);
 				break;
 			case NpcID.TZKALZUK:
-				infernoNPC = new InfernoNPC(npc, index, 1200);
+				tzHaarNPC = new TzHaarNPC(npc, index, 1200);
 				break;
 			case NpcID.JALMEJJAK:
-				infernoNPC = new InfernoNPC(npc, index, 75);
+				tzHaarNPC = new TzHaarNPC(npc, index, 75);
+				break;
+			// All fight caves monsters (npcid. didnt work for these for some reason :))) )
+			case 2189: //bats
+			case 2190:
+			case 3116:
+			case 3117:
+				tzHaarNPC = new TzHaarNPC(npc, index, 10);
+				break;
+			case 2191: // blob
+			case 2192:
+			case 3118:
+			case 3119:
+				tzHaarNPC = new TzHaarNPC(npc, index, 20);
+				break;
+
+			case 3120: // small blobs
+				tzHaarNPC = new TzHaarNPC(npc, index, 10);
+				break;
+
+			case 2193: // ranger
+			case 2194:
+			case 3121:
+			case 3122:
+				tzHaarNPC = new TzHaarNPC(npc, index, 40);
+				break;
+
+			case 3123: // melee
+			case 3124:
+				tzHaarNPC = new TzHaarNPC(npc, index, 80);
+				break;
+
+			case 3125: // mage
+			case 3126:
+				tzHaarNPC = new TzHaarNPC(npc, index, 160);
+				break;
+
+			case 3127: // jad
+			case 6506:
+				tzHaarNPC = new TzHaarNPC(npc, index, 250);
 				break;
 		}
-		if (infernoNPC != null)
-			this.infernoNPCs.add(infernoNPC);
+		if (tzHaarNPC != null)
+		{
+			log.info(tzHaarNPC.getNpc().getName());
+			this.tzHaarNPCS.add(tzHaarNPC);
+		}
 	}
 
 	@Subscribe
@@ -225,7 +266,7 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 
 	private void processXpDrop(Skill skill, final int xp)
 	{
-		if (!isInInferno)
+		if (!isInTzHaar)
 			return;
 
 		Player player = client.getLocalPlayer();
@@ -277,26 +318,32 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 			NPC interactedNPC = (NPC) interacted;
 			final int npcIndex = interactedNPC.getIndex();
 
-			for (InfernoNPC infernoNPC : this.infernoNPCs)
+			for (TzHaarNPC tzHaarNPC : this.tzHaarNPCS)
 			{
-				if (infernoNPC.getNpcIndex() != npcIndex)
+				if (tzHaarNPC.getNpcIndex() != npcIndex)
 					continue;
 
-				infernoNPC.setQueuedDamage(infernoNPC.getQueuedDamage() + damage);
-				if (infernoNPC.getHp() - infernoNPC.getQueuedDamage() <= 0)
+				tzHaarNPC.setQueuedDamage(tzHaarNPC.getQueuedDamage() + damage);
+				if (tzHaarNPC.getHp() - tzHaarNPC.getQueuedDamage() <= 0)
 				{
-					if (deadInfernoNPCs.stream().noneMatch(deadInfernoNPCs -> deadInfernoNPCs.getNpcIndex() == npcIndex))
+					if (deadTzHaarNPCS.stream().noneMatch(deadTzHaarNPCs -> deadTzHaarNPCs.getNpcIndex() == npcIndex))
 					{
-						deadInfernoNPCs.add(infernoNPC);
+						deadTzHaarNPCS.add(tzHaarNPC);
 					}
 				}
 			}
 		}
 	}
 
-	private boolean isInInferno()
+	private boolean isInTzHaar()
 	{
-		return client.getMapRegions() != null && ArrayUtils.contains(client.getMapRegions(), INFERNO_REGION_ID);
+		if (client.getMapRegions() == null)
+			return false;
+
+		if (ArrayUtils.contains(client.getMapRegions(), INFERNO_REGION_ID) || ArrayUtils.contains(client.getMapRegions(), FIGHTCAVES_REGION_ID))
+			return true;
+
+		return false;
 	}
 
 	@VisibleForTesting
@@ -304,15 +351,9 @@ public class InfernoDeathIndicatorPlugin extends Plugin
 	{
 		if (renderable instanceof NPC)
 		{
-			return deadInfernoNPCs.stream().noneMatch(infernoNPC -> infernoNPC.getNpcIndex() == ((NPC) renderable).getIndex());
+			return deadTzHaarNPCS.stream().noneMatch(tzHaarNPC -> tzHaarNPC.getNpcIndex() == ((NPC) renderable).getIndex());
 		}
 
 		return true;
-	}
-
-	@Provides
-	InfernoDeathIndicatorConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(InfernoDeathIndicatorConfig.class);
 	}
 }

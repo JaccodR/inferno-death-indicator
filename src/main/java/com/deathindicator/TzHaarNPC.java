@@ -1,13 +1,12 @@
-package com.inferno;
+package com.deathindicator;
 
-import com.sun.tools.javac.comp.Infer;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.NPC;
 
 @Getter(AccessLevel.PACKAGE)
-public class InfernoNPC
+public class TzHaarNPC
 {
     private final NPC npc;
     private final int npcIndex;
@@ -18,7 +17,7 @@ public class InfernoNPC
     @Setter
     private int hidden;
 
-    InfernoNPC(NPC npc, int npcIndex, int hp)
+    TzHaarNPC(NPC npc, int npcIndex, int hp)
     {
         this.npc = npc;
         this.npcIndex = npcIndex;

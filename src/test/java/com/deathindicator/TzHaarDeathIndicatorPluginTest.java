@@ -1,13 +1,13 @@
-package com.inferno;
+package com.deathindicator;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class InfernoDeathIndicatorPluginTest
+public class TzHaarDeathIndicatorPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(InfernoDeathIndicatorPlugin.class);
+		ExternalPluginManager.loadBuiltin(TzHaarDeathIndicatorPlugin.class);
 		RuneLite.main(args);
 	}
 }
