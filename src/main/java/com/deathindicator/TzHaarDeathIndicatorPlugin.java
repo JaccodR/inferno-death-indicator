@@ -1,3 +1,5 @@
+
+
 package com.deathindicator;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -9,8 +11,10 @@ import net.runelite.api.kit.KitType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.callback.Hooks;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.NpcUtil;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.game.NpcUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.*;
@@ -28,6 +32,8 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 	private ClientThread clientThread;
 	@Inject
 	private Hooks hooks;
+	@Inject
+	private NpcUtil npcUtil;
 
 	private boolean isInTzHaar = false;
 
@@ -42,6 +48,10 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 	));
 
 	private static final int dinhs = ItemID.DINHS_BULWARK;
+	private static final Set<Integer> scythes = new HashSet<>(Arrays.asList(
+			ItemID.SCYTHE_OF_VITUR_UNCHARGED, ItemID.SCYTHE_OF_VITUR,
+			ItemID.HOLY_SCYTHE_OF_VITUR_UNCHARGED, ItemID.HOLY_SCYTHE_OF_VITUR,
+			ItemID.SANGUINE_SCYTHE_OF_VITUR_UNCHARGED, ItemID.SANGUINE_SCYTHE_OF_VITUR));
 
 	private static final int BARRAGE_ANIMATION = 1979;
 	private static final int INFERNO_REGION_ID = 9043;
@@ -156,7 +166,7 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 		int index = npc.getIndex();
 		switch(npc.getId())
 		{
-			// All inferno monsters
+			// All inferno monsters (excluding Jads/Zuk, because these can regenate health without healing hitsplat).
 			case NpcID.JALNIB:
 				tzHaarNPC = new TzHaarNPC(npc, index, 10);
 				break;
@@ -180,16 +190,10 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 			case NpcID.JALZEK:
 				tzHaarNPC = new TzHaarNPC(npc, index, 220);
 				break;
-			case NpcID.JALTOKJAD:
-				tzHaarNPC = new TzHaarNPC(npc, index, 350);
-				break;
-			case NpcID.TZKALZUK:
-				tzHaarNPC = new TzHaarNPC(npc, index, 1200);
-				break;
 			case NpcID.JALMEJJAK:
 				tzHaarNPC = new TzHaarNPC(npc, index, 75);
 				break;
-			// All fight caves monsters (npcid. didn't work for these for some reason :))) )
+			// All fight caves monsters (excluding Jad because they can heal without healing hitsplat).
 			case 2189: //bats
 			case 2190:
 			case 3116:
@@ -223,15 +227,9 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 			case 3126:
 				tzHaarNPC = new TzHaarNPC(npc, index, 160);
 				break;
-
-			case 3127: // jad
-			case 6506:
-				tzHaarNPC = new TzHaarNPC(npc, index, 250);
-				break;
 		}
 		if (tzHaarNPC != null)
 		{
-			log.info(tzHaarNPC.getNpc().getName());
 			this.tzHaarNPCS.add(tzHaarNPC);
 		}
 	}
@@ -280,6 +278,7 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 
 		boolean isChin = CHINCHOMPAS.contains(weapon);
 		boolean isDinh = (dinhs == weapon);
+		boolean isScythe = (scythes.contains(weapon));
 		if (player.getAnimation() == BARRAGE_ANIMATION)
 			return;
 
@@ -290,7 +289,7 @@ public class TzHaarDeathIndicatorPlugin extends Plugin
 			case ATTACK:
 			case STRENGTH:
 			case DEFENCE:
-				if (isDinh)
+				if (isDinh || isScythe)
 					return;
 
 				damage = (int) ((double) xp / 4.0D);
